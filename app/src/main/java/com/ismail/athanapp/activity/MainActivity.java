@@ -1,65 +1,97 @@
 package com.ismail.athanapp.activity;
 
-import android.app.ProgressDialog;
+
+import android.Manifest;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+
 import com.ismail.athanapp.R;
-import com.ismail.athanapp.adapter.CustomAdapter;
-import com.ismail.athanapp.model.Data;
-import com.ismail.athanapp.model.BasicResponse;
-import com.ismail.athanapp.network.GetDataService;
-import com.ismail.athanapp.network.RetrofitClientInstance;
 
-import java.util.List;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
-    private CustomAdapter adapter;
-    private RecyclerView recyclerView;
-    ProgressDialog progressDoalog;
+    private FusedLocationProviderClient mFusedLocationClient;
+
+    private TextView latituteField;
+    private TextView longitudeField;
+    static final int REQUEST_LOCATION = 1;
+    LocationManager locationManager;
+    Button btnPrayerTimes;
+    Location location;
+    double latti = 0.00
+            , longi = 0.00 ;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        progressDoalog = new ProgressDialog(MainActivity.this);
-        progressDoalog.setMessage("Loading....");
-        progressDoalog.show();
-
-        /*Create handle for the RetrofitInstance interface*/
-        GetDataService service = RetrofitClientInstance.getRetrofitInstance().create(GetDataService.class);
-        Call<BasicResponse> call = service.getAllData();
-        call.enqueue(new Callback<BasicResponse>() {
+        latituteField = findViewById(R.id.TextView02);
+        longitudeField = findViewById(R.id.TextView04);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        getLocation();
+        btnPrayerTimes = findViewById(R.id.btnPrayerTimes);
+        btnPrayerTimes.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onResponse(Call<BasicResponse> call, Response<BasicResponse> response) {
-                progressDoalog.dismiss();
-                Toast.makeText(MainActivity.this, "Success", Toast.LENGTH_LONG).show();
-                generateDataList(response.body());
-            }
-
-            @Override
-            public void onFailure(Call<BasicResponse> call, Throwable t) {
-                progressDoalog.dismiss();
-                Toast.makeText(MainActivity.this, "Something went wrong...Please try later!",
-                        Toast.LENGTH_SHORT).show();
+            public void onClick(View v) {
+                if(location != null){
+                    Intent intent = new Intent(MainActivity.this,PrayerTimesActivity.class);
+                    intent.putExtra("lattitude",latti);
+                    intent.putExtra("longitude",longi);
+                    startActivity(intent);
+                }
+                else{
+                    Toast.makeText(getApplicationContext(), "Your toast message",
+                            Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
 
-    /*Method to generate List of data using RecyclerView with custom adapter*/
-    private void generateDataList(BasicResponse response) {
-        recyclerView = findViewById(R.id.customRecyclerView);
-        adapter = new CustomAdapter(this,response.getData());
-        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(MainActivity.this);
-        recyclerView.setLayoutManager(layoutManager);
-        recyclerView.setAdapter(adapter);
+    private void getLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}
+                    , REQUEST_LOCATION);
+        } else {
+
+             location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            if (location != null) {
+                 latti = location.getLatitude();
+                 longi = location.getLongitude();
+                 latituteField.setText(Double.toString(latti));
+                 longitudeField.setText(Double.toString(longi));
+
+            } else {
+                latituteField.setText("unable to find latitude ");
+                longitudeField.setText("unable to find longitude ");
+            }
+        }
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode){
+            case REQUEST_LOCATION:
+                getLocation();
+                break;
+        }
     }
 }
