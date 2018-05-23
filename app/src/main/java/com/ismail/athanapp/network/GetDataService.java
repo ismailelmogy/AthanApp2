@@ -1,9 +1,9 @@
 package com.ismail.athanapp.network;
 
 import com.ismail.athanapp.model.BasicResponse;
-import com.ismail.athanapp.model.Data;
 
-import java.util.List;
+
+import io.reactivex.Observable;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
@@ -16,6 +16,10 @@ public interface GetDataService{
 //                                       @Query("country") String country);
 
         @GET("/v1/calendar")
-        Call<BasicResponse> getAllData(@Query("latitude") double latitude,
-                                       @Query("longitude") double longitude);
+        Observable<BasicResponse> getAllData(@Query("latitude") double latitude,
+                              @Query("longitude") double longitude);
+
+//        Call<BasicResponse> getAllData(@Query("latitude") double latitude,
+//                                       @Query("longitude") double longitude);
+
 }
